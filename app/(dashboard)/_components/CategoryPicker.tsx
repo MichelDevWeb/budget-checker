@@ -20,14 +20,21 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import CreateCategoryDialog from "./CreateCategoryDialog";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 
 interface Props {
   type: TransactionType;
+  onChange: (value: string) => void;
 }
-const CategoryPicker = ({ type }: Props) => {
+const CategoryPicker = ({ type, onChange }: Props) => {
   const [open, setOpen] = React.useState(false);
-  const [value] = React.useState("");
+  const [value, setValue] = React.useState("");
+
+  React.useEffect(() => {
+    if (!value) return;
+    // When the value changes, call the onChange callback
+    onChange(value);
+  }, [value, onChange]);
 
   const categoriesQuery = useQuery({
     queryKey: ["categories", { type }],
@@ -36,6 +43,14 @@ const CategoryPicker = ({ type }: Props) => {
       return response.json();
     },
   });
+
+  const successCallback = React.useCallback(
+    (category: Category) => {
+      setValue(category.name);
+      setOpen((prev) => !prev);
+    },
+    [setValue, setOpen]
+  );
 
   const selectedCategory = categoriesQuery.data?.find(
     (category: Category) => category.name === value
@@ -54,6 +69,7 @@ const CategoryPicker = ({ type }: Props) => {
           ) : (
             "Select a category"
           )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
@@ -63,7 +79,7 @@ const CategoryPicker = ({ type }: Props) => {
           }}
         >
           <CommandInput placeholder="Search category..." />
-          <CreateCategoryDialog type={type} />
+          <CreateCategoryDialog type={type} successCallback={successCallback} />
           <CommandEmpty>
             <p>Category not found</p>
             <p className="text-xs text-muted-foreground">
@@ -76,13 +92,14 @@ const CategoryPicker = ({ type }: Props) => {
                 <CommandItem
                   key={category.name}
                   onSelect={() => {
+                    setValue(category.name);
                     setOpen((prev) => !prev);
                   }}
                 >
                   <CategoryRow category={category} />
                   <Check
                     className={cn(
-                      "mr-2 w-4 h-4 opacity-0",
+                      "ml-2 w-4 h-4 opacity-0",
                       value === category.name && "opacity-100"
                     )}
                   />

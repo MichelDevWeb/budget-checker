@@ -38,21 +38,27 @@ import { CreateCategory } from "../_actions/categories";
 import { toast } from "sonner";
 import { Category } from "@prisma/client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTheme } from "next-themes";
 
 interface Props {
   type: TransactionType;
+  successCallback: (category: Category) => void;
 }
-const CreateCategoryDialog = ({ type }: Props) => {
+
+const CreateCategoryDialog = ({ type, successCallback }: Props) => {
   const [open, setOpen] = React.useState(false);
 
   const form = useForm<CreateCategorySchemaType>({
     resolver: zodResolver(CreateCategorySchema),
     defaultValues: {
       type,
+      name: "",
+      icon: "",
     },
   });
 
   const queryClient = useQueryClient();
+  const theme = useTheme();
 
   const { mutate, isPending } = useMutation({
     mutationFn: CreateCategory,
@@ -66,6 +72,8 @@ const CreateCategoryDialog = ({ type }: Props) => {
       toast.success(`Category ${data.name} created successfully`, {
         id: "create-category",
       });
+
+      successCallback(data);
 
       await queryClient.invalidateQueries({
         queryKey: ["categories"],
@@ -129,10 +137,10 @@ const CreateCategoryDialog = ({ type }: Props) => {
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input defaultValue={""} {...field} />
+                    <Input placeholder="Category" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Transaction description (optional)
+                    This is how your category will appear in the app
                   </FormDescription>
                 </FormItem>
               )}
@@ -172,6 +180,7 @@ const CreateCategoryDialog = ({ type }: Props) => {
                       <PopoverContent className="w-full">
                         <Picker
                           data={data}
+                          theme={theme.resolvedTheme}
                           onEmojiSelect={(emoji: { native: string }) => {
                             field.onChange(emoji.native);
                           }}
