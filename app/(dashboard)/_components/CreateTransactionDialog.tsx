@@ -29,8 +29,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import CategoryPicker from "./CategoryPicker";
-import { Popover } from "@/components/ui/popover";
-import { PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
