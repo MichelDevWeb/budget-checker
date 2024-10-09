@@ -43,8 +43,8 @@ export interface DateRangePickerProps {
 
 const formatDate = (date: Date, locale: string = "en-us"): string => {
   return date.toLocaleDateString(locale, {
-    month: "short",
     day: "numeric",
+    month: "numeric",
     year: "numeric",
   });
 };
