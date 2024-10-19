@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Category } from "@prisma/client";
-import { DeleteCategory } from "../_actions/categories";
 import DeleteCategoryDialog from "../_components/DeleteCategoryDialog";
 
 const page = () => {
