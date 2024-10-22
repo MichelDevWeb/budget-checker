@@ -28,7 +28,6 @@ import { DataTableViewOptions } from "@/components/datatable/ColumnToggle";
 import { Transaction } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { download, generateCsv, mkConfig } from "export-to-csv";
-import { format } from "path";
 import { DownloadIcon, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
@@ -146,6 +145,7 @@ const TransactionTable = ({ from, to }: Props) => {
       ),
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleExportCSV = (data: any[]) => {
     const csv = generateCsv(csvConfig)(data);
     download(csvConfig)(csv);
