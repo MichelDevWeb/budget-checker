@@ -25,7 +25,7 @@ const page = () => {
     <>
       {/* HEADER */}
       <div className="border-b bg-card">
-        <div className="container flex flex-wrap items-center justify-between gap-6 py-8">
+        <div className="container flex flex-wrap items-center justify-between gap-6 py-6 px-6 mx-auto">
           <div>
             <p className="text-3xl font-bold">Manage</p>
             <p className="text-muted-foreground">
@@ -35,7 +35,7 @@ const page = () => {
         </div>
       </div>
       {/* END HEADER */}
-      <div className="container flex flex-col gap-4 p-4">
+      <div className="container flex flex-col gap-4 p-4 mx-auto">
         <Card>
           <CardHeader>
             <CardTitle>Currency</CardTitle>
@@ -76,7 +76,7 @@ function CategoryList({ type }: { type: TransactionType }) {
                 <TrendingUp className="h-12 w-12 items-center rounded-lg bg-emerald-400/10 p-2 text-emerald-500" />
               )}
               <div>
-                {type === "income" ? "Incomes" : "Expenses"} categories
+                {type === "income" ? "Incomes" : "Expenses"}
                 <div className="text-sm text-muted-foreground">
                   Sorted by name
                 </div>

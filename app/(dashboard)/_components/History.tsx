@@ -44,8 +44,8 @@ const History = ({ userSettings }: { userSettings: UserSettings }) => {
     hisotryDataQuery.data && hisotryDataQuery.data.length > 0;
 
   return (
-    <div className="container">
-      <h2 className="mt-12 text-3xl font-bold">History</h2>
+    <div className="container px-4 mx-auto">
+      <h2 className="mt-6 text-3xl font-bold">History</h2>
       <Card className="col-span-12 mt-2 w-full">
         <CardHeader className="gap-2">
           <CardTitle className="grid grid-flow-row justify-between gap-2 md:grid-flow-col">
@@ -149,7 +149,7 @@ const History = ({ userSettings }: { userSettings: UserSettings }) => {
             {!dataAvailable && (
               <Card className="flex h-[300px] flex-col items-center justify-center bg-background">
                 No data for the selected period
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground text-center">
                   Try selecting a different period or adding new transactions
                 </p>
               </Card>

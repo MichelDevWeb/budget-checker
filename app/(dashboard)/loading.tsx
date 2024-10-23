@@ -1,7 +1,7 @@
 import React from "react";
 
 const loading = () => {
-  return <div>loading...</div>;
+  return <div className="text-center pt-6">Loading...</div>;
 };
 
 export default loading;

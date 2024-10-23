@@ -15,7 +15,7 @@ const TransactionsPage = () => {
   return (
     <>
       <div className="border-b bg-card">
-        <div className="container flex flex-wrap items-center justify-between gap-6 py-8">
+        <div className="container flex flex-wrap items-center justify-between gap-6 py-6 px-6 mx-auto">
           <div>
             <p className="text-3xl font-bold">Transactions History</p>
           </div>
@@ -40,7 +40,7 @@ const TransactionsPage = () => {
           />
         </div>
       </div>
-      <div className="container">
+      <div className="container px-6 mx-auto">
         <TransactionTable from={dateRange.from} to={dateRange.to} />
       </div>
     </>

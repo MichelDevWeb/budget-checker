@@ -22,7 +22,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -106,7 +105,7 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="w-max">
         <DialogHeader>
           <DialogTitle>
             Create a new{" "}
@@ -132,9 +131,9 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
                   <FormControl>
                     <Input id="Description" {...field} />
                   </FormControl>
-                  <FormDescription>
+                  {/* <FormDescription>
                     Transaction description (optional)
-                  </FormDescription>
+                  </FormDescription> */}
                 </FormItem>
               )}
             />
@@ -147,37 +146,33 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
-                  <FormDescription>
+                  {/* <FormDescription>
                     Transaction amount (required)
-                  </FormDescription>
+                  </FormDescription> */}
                 </FormItem>
               )}
             />
-
             <div className="flex items-center justify-between gap-2">
               <FormField
                 control={form.control}
                 name="category"
                 render={() => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Category</FormLabel>
+                  <FormItem>
                     <FormControl>
                       <CategoryPicker
                         type={type}
                         onChange={handleCategoryChange}
                       />
                     </FormControl>
-                    <FormDescription>Select a category</FormDescription>
+                    {/* <FormDescription>Select a category</FormDescription> */}
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Transaction date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -189,7 +184,7 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
                             )}
                           >
                             {field.value ? (
-                              format(field.value, "PPP")
+                              format(field.value, "dd/MM/yyyy")
                             ) : (
                               <span>Pick a date</span>
                             )}
@@ -209,7 +204,7 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
                         />
                       </PopoverContent>
                     </Popover>
-                    <FormDescription>Select a date</FormDescription>
+                    {/* <FormDescription>Select a date</FormDescription> */}
                   </FormItem>
                 )}
               />
@@ -219,6 +214,7 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
         <DialogFooter>
           <DialogClose asChild>
             <Button
+              className="w-full"
               type="button"
               variant="secondary"
               onClick={() => {
@@ -228,7 +224,11 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
               Cancel
             </Button>
           </DialogClose>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={isPending}>
+          <Button
+            className="w-full"
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={isPending}
+          >
             {!isPending ? "Create" : "Creating..."}
             {isPending && <Loader2 className="animate-spin" />}
           </Button>

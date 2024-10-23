@@ -159,13 +159,10 @@ const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
                   <FormControl>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className="h-[100px] w-full"
-                        >
+                        <Button variant={"outline"} className="h-[85px] w-full">
                           {form.watch("icon") ? (
                             <div className="flex flex-col items-center gap-2">
-                              <span className="text-5xl" role="img">
+                              <span className="text-4xl" role="img">
                                 {field.value}
                               </span>
                               <p className="text-xs text-muted-foreground">
@@ -174,7 +171,7 @@ const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
                             </div>
                           ) : (
                             <div className="flex flex-col items-center gap-2">
-                              <CircleOff className="h-[48px] w-[48px]" />
+                              <CircleOff className="h-[35px] w-[35px]" />
                               <p className="text-xs text-muted-foreground">
                                 Click to select
                               </p>
@@ -193,9 +190,9 @@ const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
                       </PopoverContent>
                     </Popover>
                   </FormControl>
-                  <FormDescription>
+                  {/* <FormDescription>
                     This is how your category will appear in the app
-                  </FormDescription>
+                  </FormDescription> */}
                 </FormItem>
               )}
             />
@@ -204,6 +201,7 @@ const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
         <DialogFooter>
           <DialogClose asChild>
             <Button
+              className="w-full"
               type="button"
               variant="secondary"
               onClick={() => {
@@ -213,7 +211,11 @@ const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
               Cancel
             </Button>
           </DialogClose>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={isPending}>
+          <Button
+            className="w-full"
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={isPending}
+          >
             {!isPending ? "Create" : "Creating..."}
             {isPending && <Loader2 className="animate-spin" />}
           </Button>
