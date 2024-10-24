@@ -105,7 +105,7 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="w-max">
+      <DialogContent className="w-fit">
         <DialogHeader>
           <DialogTitle>
             Create a new{" "}
@@ -144,7 +144,7 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input type="number" inputMode="numeric" {...field} />
                   </FormControl>
                   {/* <FormDescription>
                     Transaction amount (required)
