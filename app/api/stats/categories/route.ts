@@ -10,6 +10,7 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+  const type = searchParams.get("type");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
@@ -21,7 +22,8 @@ export async function GET(request: Request) {
   const stats = await getCategoriesStats(
     user.id,
     queryParams.data.from,
-    queryParams.data.to
+    queryParams.data.to,
+    type ?? ""
   );
   return Response.json(stats);
 }
@@ -30,11 +32,17 @@ export type GetCategoriesStatsResponseType = Awaited<
   ReturnType<typeof getCategoriesStats>
 >;
 
-async function getCategoriesStats(userId: string, from: Date, to: Date) {
+async function getCategoriesStats(
+  userId: string,
+  from: Date,
+  to: Date,
+  type: string
+) {
   const stats = await prisma.transaction.groupBy({
     by: ["type", "category", "categoryIcon"],
     where: {
       userId,
+      type,
       date: {
         gte: from,
         lte: to,
