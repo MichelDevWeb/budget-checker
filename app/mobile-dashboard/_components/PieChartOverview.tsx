@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { GetFormatterForCurrency } from "@/lib/helpers";
@@ -29,7 +30,6 @@ const renderActiveShape = (props: any) => {
     endAngle,
     fill,
     payload,
-    percent,
     value,
     income,
     expense,
@@ -130,13 +130,16 @@ export default function PieChartOverview({
 }: PieChartOverviewProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const onPieEnter = useCallback(
-    (_, index) => {
+    (_: React.MouseEvent<SVGElement, MouseEvent>, index: number) => {
       setActiveIndex(index);
     },
     [setActiveIndex]
   );
   if (data?.length > 0) {
-    data = data.map((el) => ({ name: el.category, value: el._sum.amount }));
+    data = data.map((el: { category: string; _sum: { amount: number } }) => ({
+      name: el.category,
+      value: el._sum.amount,
+    }));
 
     return (
       <div
@@ -153,7 +156,7 @@ export default function PieChartOverview({
         <PieChart width={450} height={450}>
           <Pie
             activeIndex={activeIndex}
-            activeShape={(props) =>
+            activeShape={(props: any) =>
               renderActiveShape({ ...props, income, expense, type })
             }
             data={data}
@@ -166,9 +169,11 @@ export default function PieChartOverview({
             style={{ margin: "auto" }}
             onMouseEnter={onPieEnter}
           >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={colors[index]} />
-            ))}
+            {data.map(
+              (entry: { name: string; value: number }, index: number) => (
+                <Cell key={`cell-${index}`} fill={colors[index]} />
+              )
+            )}
           </Pie>
         </PieChart>
       </div>

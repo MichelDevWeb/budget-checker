@@ -212,11 +212,13 @@ const Overview = ({
           ) : (
             true
           )}
-          <MobileCategoriesStats
-            data={statsQuery.data}
-            formatter={formatter}
-            type={type}
-          />
+          {statsQuery.data && (
+            <MobileCategoriesStats
+              data={statsQuery.data}
+              formatter={formatter}
+              type={type}
+            />
+          )}
         </SkeletonWrapper>
       </>
     );
