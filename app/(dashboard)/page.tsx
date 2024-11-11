@@ -6,6 +6,8 @@ import React from "react";
 import CreateTransactionDialog from "./_components/CreateTransactionDialog";
 import Overview from "./_components/Overview";
 import History from "./_components/History";
+import { headers } from "next/headers";
+import { isMobile } from "@/lib/utils";
 
 async function page() {
   const user = await currentUser();
@@ -21,6 +23,13 @@ async function page() {
   if (!userSettings) {
     redirect("/wizard");
   }
+
+  const userAgent = headers().get("user-agent") || "";
+  const _isMobile = isMobile(userAgent);
+  if (_isMobile) {
+    redirect("/mobile-dashboard");
+  }
+
   return (
     <div className="h-full bg-background">
       <div className="border-b bg-card">

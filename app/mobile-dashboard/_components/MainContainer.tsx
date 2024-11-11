@@ -30,8 +30,9 @@ import PieChartOverview from "./PieChartOverview";
 import MobileCategoriesStats from "./MobileCategoriesStats";
 import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { GetCategoriesStatsResponseType } from "@/app/api/stats/categories/route";
+import useGesture, { GestureConfig } from "@/components/UseGesture";
 
-const getDateRangeItems = () => {
+const getDateRangeItems = (step?: number) => {
   return [
     {
       label: "Tất cả thời gian",
@@ -39,30 +40,118 @@ const getDateRangeItems = () => {
       to: new Date("2100-12-30"),
     },
     {
-      label: `Hôm nay (${new Date().toLocaleDateString("vi-VN")})`,
-      from: startOfToday(),
-      to: endOfToday(),
+      label:
+        step && step !== 0
+          ? new Date(
+              new Date().setDate(new Date().getDate() + step)
+            ).toLocaleDateString("vi-VN")
+          : `Hôm nay (${new Date().toLocaleDateString("vi-VN")})`,
+
+      from:
+        step && step !== 0
+          ? new Date(new Date().setDate(new Date().getDate() + step))
+          : new Date(),
+      to:
+        step && step !== 0
+          ? new Date(new Date().setDate(new Date().getDate() + step))
+          : new Date(),
     },
     {
-      label: `Tuần này (${startOfWeek(new Date()).toLocaleDateString(
-        "vi-VN"
-      )} - ${endOfWeek(new Date()).toLocaleDateString("vi-VN")})`,
-      from: startOfWeek(new Date()),
-      to: endOfWeek(new Date()),
+      label:
+        step && step !== 0
+          ? `${startOfWeek(
+              new Date(new Date().setDate(new Date().getDate() + step))
+            ).toLocaleDateString("vi-VN")} - ${endOfWeek(
+              new Date(new Date().setDate(new Date().getDate() + step))
+            ).toLocaleDateString("vi-VN")}`
+          : `Tuần này (${startOfWeek(new Date()).toLocaleDateString(
+              "vi-VN"
+            )} - ${endOfWeek(new Date()).toLocaleDateString("vi-VN")})`,
+      from:
+        step && step !== 0
+          ? startOfWeek(
+              new Date(
+                new Date(new Date().setDate(new Date().getDate() + step))
+              )
+            )
+          : startOfWeek(new Date()),
+      to:
+        step && step !== 0
+          ? endOfWeek(
+              new Date(
+                new Date(new Date().setDate(new Date().getDate() + step))
+              )
+            )
+          : endOfWeek(new Date()),
     },
     {
-      label: `Tháng này (${
-        new Date().getMonth() + 1
-      }/${new Date().getFullYear()})`,
-      from: startOfMonth(new Date()),
-      to: endOfMonth(new Date()),
+      label:
+        step && step !== 0
+          ? `${
+              new Date(
+                new Date().setDate(new Date().getDate() + step)
+              ).getMonth() + 1
+            }/${new Date(
+              new Date().setDate(new Date().getDate() + step)
+            ).getFullYear()}`
+          : `Tháng này (${
+              new Date().getMonth() + 1
+            }/${new Date().getFullYear()})`,
+      from:
+        step && step !== 0
+          ? startOfMonth(
+              new Date(
+                new Date(new Date().setDate(new Date().getDate() + step))
+              )
+            )
+          : startOfMonth(new Date()),
+      to:
+        step && step !== 0
+          ? endOfMonth(
+              new Date(
+                new Date(new Date().setDate(new Date().getDate() + step))
+              )
+            )
+          : endOfMonth(new Date()),
     },
     {
-      label: `Năm nay (${new Date().getFullYear()})`,
-      from: startOfYear(new Date()),
-      to: endOfYear(new Date()),
+      label:
+        step && step !== 0
+          ? new Date(
+              new Date().setDate(new Date().getDate() + step)
+            ).getFullYear()
+          : `Năm nay (${new Date().getFullYear()})`,
+      from:
+        step && step !== 0
+          ? startOfYear(
+              new Date(
+                new Date(new Date().setDate(new Date().getDate() + step))
+              )
+            )
+          : startOfYear(new Date()),
+      to:
+        step && step !== 0
+          ? endOfYear(
+              new Date(
+                new Date(new Date().setDate(new Date().getDate() + step))
+              )
+            )
+          : endOfYear(new Date()),
     },
   ];
+};
+
+const getStepByIndex = (index: number) => {
+  switch (index) {
+    case 2:
+      return 7;
+    case 3:
+      return 31;
+    case 4:
+      return 366;
+    default:
+      return 1;
+  }
 };
 
 const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
@@ -74,6 +163,7 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
     to: endOfToday(),
   });
   const [selectedDateRangeIndex, setSelectedDateRangeIndex] = React.useState(1);
+  const [step, setStep] = React.useState<number>(0);
   const statsQuery = useQuery<GetBalanceStatsResponseType>({
     queryKey: ["overview", "stats", dateRange.from, dateRange.to],
     queryFn: () =>
@@ -91,8 +181,46 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
 
   const balance = income - expense;
 
+  const elementRef = React.useRef<HTMLDivElement>(null);
+
+  const handleSwipeLeft: GestureConfig = {
+    gesture: "swipeLeft",
+    touchCount: 1,
+    callback: () => {
+      console.log("Swiped Left!");
+      const _step = step + getStepByIndex(selectedDateRangeIndex);
+
+      setStep(_step);
+      console.log(_step);
+      setDateRange({
+        from: getDateRangeItems(_step)[selectedDateRangeIndex].from,
+        to: getDateRangeItems(_step)[selectedDateRangeIndex].to,
+      });
+    },
+    elementRef,
+  };
+  const handleSwipeRight: GestureConfig = {
+    gesture: "swipeRight",
+    touchCount: 1,
+    callback: () => {
+      console.log("Swiped Right!");
+      const _step = step - getStepByIndex(selectedDateRangeIndex);
+
+      setStep(_step);
+      console.log(_step);
+      setDateRange({
+        from: getDateRangeItems(_step)[selectedDateRangeIndex].from,
+        to: getDateRangeItems(_step)[selectedDateRangeIndex].to,
+      });
+    },
+    elementRef,
+  };
+
+  useGesture(handleSwipeLeft);
+  useGesture(handleSwipeRight);
+
   return (
-    <>
+    <div ref={elementRef} className="swipeable-container">
       {/* HEADER */}
       <div className="block border-separate bg-background">
         <div className="flex items-center justify-between px-4">
@@ -111,12 +239,15 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
           <div></div>
         </div>
         <div className="flex items-center justify-between px-1 py-1 relative z-10">
-          <ArrowLeftCircle className="h-10 w-10 opacity-75" />
+          <ArrowLeftCircle
+            className="h-10 w-10 opacity-75"
+            onClick={() => handleSwipeRight.callback()}
+          />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant={"secondary"}>
-                <b>{getDateRangeItems()[selectedDateRangeIndex].label}</b>
+                <b>{getDateRangeItems(step)[selectedDateRangeIndex].label}</b>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
@@ -139,7 +270,10 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <ArrowRightCircle className="h-10 w-10 opacity-75" />
+          <ArrowRightCircle
+            className="h-10 w-10 opacity-75"
+            onClick={() => handleSwipeLeft.callback()}
+          />
         </div>
       </div>
       {/* OVERVIEW */}
@@ -149,7 +283,7 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
         expense={expense}
         userSettings={userSettings}
       />
-    </>
+    </div>
   );
 };
 
@@ -194,24 +328,20 @@ const Overview = ({
             expense={expense}
             type={type}
           />
-          {statsQuery.data && statsQuery.data.length > 0 ? (
-            <div className="flex justify-center">
-              <Button
-                className={`bg-${
-                  type === "income" ? "emerald" : "red"
-                }-500 text-white hover:bg-${
-                  type === "income" ? "emerald" : "red"
-                }-950 hover:text-white relative z-10`}
-                onClick={() => {
-                  setType(type === "income" ? "expense" : "income");
-                }}
-              >
-                {type === "income" ? "Incomes" : "Expenses"}
-              </Button>
-            </div>
-          ) : (
-            true
-          )}
+          <div className="flex justify-center">
+            <Button
+              className={`bg-${
+                type === "income" ? "emerald" : "red"
+              }-500 text-white hover:bg-${
+                type === "income" ? "emerald" : "red"
+              }-950 hover:text-white relative z-10`}
+              onClick={() => {
+                setType(type === "income" ? "expense" : "income");
+              }}
+            >
+              {type === "income" ? "Incomes" : "Expenses"}
+            </Button>
+          </div>
           {statsQuery.data && (
             <MobileCategoriesStats
               data={statsQuery.data}
