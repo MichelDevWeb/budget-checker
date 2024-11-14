@@ -1,6 +1,6 @@
 {
-  "name": "Budget Tracker PWA",
-  "short_name": "BT PWA",
+  "name": "Budget Tracker",
+  "short_name": "Budget Tracker",
   "description": "Budget Tracker PWA application with Next 14",
   "start_url": "/",
   "display": "standalone",

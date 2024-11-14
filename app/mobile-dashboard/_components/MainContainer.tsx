@@ -30,7 +30,7 @@ import PieChartOverview from "./PieChartOverview";
 import MobileCategoriesStats from "./MobileCategoriesStats";
 import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { GetCategoriesStatsResponseType } from "@/app/api/stats/categories/route";
-import useGesture, { GestureConfig } from "@/components/UseGesture";
+import { useSwipeable } from "react-swipeable";
 
 const getDateRangeItems = (step?: number) => {
   return [
@@ -178,51 +178,41 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
 
   const income = statsQuery.data?.income || 0;
   const expense = statsQuery.data?.expense || 0;
-
   const balance = income - expense;
 
-  const elementRef = React.useRef<HTMLDivElement>(null);
+  const _onSwipedLeft = () => {
+    if (selectedDateRangeIndex === 0) return;
+    console.log("Swiped Left!");
+    const _step = step + getStepByIndex(selectedDateRangeIndex);
 
-  const handleSwipeLeft: GestureConfig = {
-    gesture: "swipeLeft",
-    touchCount: 1,
-    callback: () => {
-      console.log("Swiped Left!");
-      const _step = step + getStepByIndex(selectedDateRangeIndex);
-
-      setStep(_step);
-      console.log(_step);
-      setDateRange({
-        from: getDateRangeItems(_step)[selectedDateRangeIndex].from,
-        to: getDateRangeItems(_step)[selectedDateRangeIndex].to,
-      });
-    },
-    elementRef,
+    setStep(_step);
+    console.log(_step);
+    setDateRange({
+      from: getDateRangeItems(_step)[selectedDateRangeIndex].from,
+      to: getDateRangeItems(_step)[selectedDateRangeIndex].to,
+    });
   };
-  const handleSwipeRight: GestureConfig = {
-    gesture: "swipeRight",
-    touchCount: 1,
-    callback: () => {
-      console.log("Swiped Right!");
-      const _step = step - getStepByIndex(selectedDateRangeIndex);
+  const _onSwipedRight = () => {
+    if (selectedDateRangeIndex === 0) return;
+    console.log("Swiped Right!");
+    const _step = step - getStepByIndex(selectedDateRangeIndex);
 
-      setStep(_step);
-      console.log(_step);
-      setDateRange({
-        from: getDateRangeItems(_step)[selectedDateRangeIndex].from,
-        to: getDateRangeItems(_step)[selectedDateRangeIndex].to,
-      });
-    },
-    elementRef,
+    setStep(_step);
+    console.log(_step);
+    setDateRange({
+      from: getDateRangeItems(_step)[selectedDateRangeIndex].from,
+      to: getDateRangeItems(_step)[selectedDateRangeIndex].to,
+    });
   };
-
-  useGesture(handleSwipeLeft);
-  useGesture(handleSwipeRight);
+  const handlers = useSwipeable({
+    onSwipedLeft: () => _onSwipedLeft(),
+    onSwipedRight: () => _onSwipedRight(),
+  });
 
   return (
-    <div ref={elementRef} className="swipeable-container">
+    <div {...handlers}>
       {/* HEADER */}
-      <div className="block border-separate bg-background">
+      <div className="block border-separate bg-gray-100">
         <div className="flex items-center justify-between px-4">
           <div></div>
           <div className="flex flex-col items-center gap-0">
@@ -241,7 +231,7 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
         <div className="flex items-center justify-between px-1 py-1 relative z-10">
           <ArrowLeftCircle
             className="h-10 w-10 opacity-75"
-            onClick={() => handleSwipeRight.callback()}
+            onClick={() => _onSwipedRight()}
           />
 
           <DropdownMenu>
@@ -272,7 +262,7 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
           </DropdownMenu>
           <ArrowRightCircle
             className="h-10 w-10 opacity-75"
-            onClick={() => handleSwipeLeft.callback()}
+            onClick={() => _onSwipedLeft()}
           />
         </div>
       </div>
