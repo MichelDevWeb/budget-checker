@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { UserSettings } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { GetBalanceStatsResponseType } from "@/app/api/stats/balance/route";
@@ -212,55 +212,51 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
   return (
     <div {...handlers}>
       {/* HEADER */}
-      <div className="block border-separate bg-gray-100">
-        <div className="flex items-center justify-between px-4">
-          <div></div>
-          <div className="flex flex-col items-center gap-0">
-            <p className="text-muted-foreground">Tất cả các tài khoản</p>
+      <div className="block border-separate">
+        <div className="flex items-center justify-between py-1 relative z-10">
+          <ChevronsLeft
+            className="h-10 w-10 opacity-75"
+            onClick={() => _onSwipedRight()}
+          />
+
+          <div className="flex flex-col items-center gap-2">
             <CountUp
               preserveValue
               redraw={false}
               end={balance}
               decimal="2"
               formattingFn={(value) => formatter.format(value)}
-              className="text-2xl"
+              className="text-3xl font-bold"
             />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant={"secondary"}>
+                  <b>{getDateRangeItems(step)[selectedDateRangeIndex].label}</b>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center">
+                <DropdownMenuLabel>Chọn mốc thời gian</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {getDateRangeItems().map((item, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    className="flex items-center gap-2"
+                    onSelect={() => {
+                      setSelectedDateRangeIndex(index);
+                      setDateRange({
+                        from: item.from,
+                        to: item.to,
+                      });
+                    }}
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <div></div>
-        </div>
-        <div className="flex items-center justify-between px-1 py-1 relative z-10">
-          <ArrowLeftCircle
-            className="h-10 w-10 opacity-75"
-            onClick={() => _onSwipedRight()}
-          />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant={"secondary"}>
-                <b>{getDateRangeItems(step)[selectedDateRangeIndex].label}</b>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center">
-              <DropdownMenuLabel>Chọn mốc thời gian</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {getDateRangeItems().map((item, index) => (
-                <DropdownMenuItem
-                  key={index}
-                  className="flex items-center gap-2"
-                  onSelect={() => {
-                    setSelectedDateRangeIndex(index);
-                    setDateRange({
-                      from: item.from,
-                      to: item.to,
-                    });
-                  }}
-                >
-                  {item.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <ArrowRightCircle
+          <ChevronsRight
             className="h-10 w-10 opacity-75"
             onClick={() => _onSwipedLeft()}
           />

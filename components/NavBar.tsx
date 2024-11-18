@@ -8,7 +8,14 @@ import { Button, buttonVariants } from "./ui/button";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { ThemeSwitcherBtn } from "./ThemeSwitcherBtn";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
 import { Menu } from "lucide-react";
 
 const NavBar = () => {
@@ -22,6 +29,7 @@ const NavBar = () => {
 
 const items = [
   { label: "Dashboard", link: "/" },
+  { label: "Mobile", link: "/mobile-dashboard" },
   { label: "Transactions", link: "/transactions" },
   { label: "Manage", link: "/manage" },
 ];
@@ -39,7 +47,12 @@ const MobileNavbar = () => {
             </Button>
           </SheetTrigger>
           <SheetContent className="w-[400px] sm:w-[540px]" side="left">
-            <Logo />
+            <SheetHeader>
+              <SheetTitle>
+                <Logo />
+              </SheetTitle>
+              <SheetDescription></SheetDescription>
+            </SheetHeader>
             <div className="flex flex-col gap-1 pt-4">
               {items.map((item) => (
                 <NavbarItem
