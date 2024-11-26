@@ -84,20 +84,14 @@ const renderActiveShape = (props: any) => {
         cy={cy}
         startAngle={startAngle}
         endAngle={endAngle}
-        innerRadius={outerRadius + 6}
-        outerRadius={outerRadius + 10}
+        innerRadius={outerRadius + 2}
+        outerRadius={outerRadius + 6}
         fill={fill}
       />
-      <path
-        d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`}
-        stroke={fill}
-        fill="none"
-      />
-      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
       <text
         x={ex + (cos >= 0 ? 1 : -1) * 12}
         y={ey}
-        textAnchor={textAnchor}
+        textAnchor="middle"
         fill={fill}
       >
         {payload.name}
@@ -106,7 +100,7 @@ const renderActiveShape = (props: any) => {
         x={ex + (cos >= 0 ? 1 : -1) * 12}
         y={ey}
         dy={16}
-        textAnchor={textAnchor}
+        textAnchor="middle"
         fill={fill}
       >
         {GetFormatterForCurrency("VND").format(value)}
