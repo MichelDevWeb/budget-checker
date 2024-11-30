@@ -93,6 +93,7 @@ const renderActiveShape = (props: any) => {
         y={ey}
         textAnchor="middle"
         fill={fill}
+        style={{ fontSize: "10px" }}
       >
         {payload.name}
       </text>
@@ -102,6 +103,7 @@ const renderActiveShape = (props: any) => {
         dy={16}
         textAnchor="middle"
         fill={fill}
+        style={{ fontSize: "12px" }}
       >
         {GetFormatterForCurrency("VND").format(value)}
       </text>

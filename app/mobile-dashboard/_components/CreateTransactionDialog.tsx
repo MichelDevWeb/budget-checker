@@ -40,6 +40,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DateToUTCDate } from "@/lib/helpers";
 import { CreateTransaction } from "@/app/(dashboard)/_actions/transactions";
+import { NumericFormat } from "react-number-format";
 
 interface Props {
   trigger: ReactNode;
@@ -137,11 +138,18 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input type="number" inputMode="numeric" {...field} />
+                    <NumericFormat
+                      value={field.value}
+                      thousandSeparator="."
+                      decimalSeparator=","
+                      prefix=""
+                      onValueChange={(values) => {
+                        const { floatValue } = values;
+                        field.onChange(floatValue);
+                      }}
+                      className="border border-gray-300 rounded p-2 w-full dark:bg-gray-900 dark:text-gray-100"
+                    />
                   </FormControl>
-                  {/* <FormDescription>
-                    Transaction amount (required)
-                  </FormDescription> */}
                 </FormItem>
               )}
             />

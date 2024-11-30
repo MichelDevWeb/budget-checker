@@ -212,35 +212,45 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
   return (
     <div {...handlers}>
       {/* HEADER */}
-      <div className="block border-separate">
-        <div className="flex items-center justify-between py-1 relative z-10">
+      <div className="rounded-lg bg-white dark:bg-gray-900 shadow-md dark:shadow-gray-950/50 mx-2 mb-4 border border-border dark:border-gray-800">
+        <div className="flex items-center justify-between p-3 relative z-10">
           <ChevronsLeft
-            className="h-10 w-10 opacity-75"
+            className="h-10 w-10 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 active:opacity-50 transition-all cursor-pointer"
             onClick={() => _onSwipedRight()}
           />
 
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-3">
             <CountUp
               preserveValue
               redraw={false}
               end={balance}
               decimal="2"
               formattingFn={(value) => formatter.format(value)}
-              className="text-3xl font-bold"
+              className="text-3xl font-bold ml-4 dark:text-gray-100"
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant={"secondary"}>
+                <Button
+                  variant={"secondary"}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 
+                    transition-colors shadow-sm dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700"
+                >
                   <b>{getDateRangeItems(step)[selectedDateRangeIndex].label}</b>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center">
-                <DropdownMenuLabel>Chọn mốc thời gian</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent
+                align="center"
+                className="w-64 shadow-lg dark:bg-gray-900 dark:border-gray-800"
+              >
+                <DropdownMenuLabel className="text-center dark:text-gray-300">
+                  Chọn mốc thời gian
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="dark:border-gray-800" />
                 {getDateRangeItems().map((item, index) => (
                   <DropdownMenuItem
                     key={index}
-                    className="flex items-center gap-2"
+                    className="flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 
+                      cursor-pointer dark:text-gray-300 dark:focus:bg-gray-800 dark:focus:text-gray-200"
                     onSelect={() => {
                       setSelectedDateRangeIndex(index);
                       setDateRange({
@@ -257,7 +267,8 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
           </div>
 
           <ChevronsRight
-            className="h-10 w-10 opacity-75"
+            className="h-10 w-10 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 
+              active:opacity-50 transition-all cursor-pointer"
             onClick={() => _onSwipedLeft()}
           />
         </div>
@@ -316,14 +327,20 @@ const Overview = ({
           />
           <div className="flex justify-center">
             <Button
-              className={`bg-${
-                type === "income" ? "emerald" : "red"
-              }-500 text-white hover:bg-${
-                type === "income" ? "emerald" : "red"
-              }-950 hover:text-white relative z-10`}
-              onClick={() => {
-                setType(type === "income" ? "expense" : "income");
-              }}
+              className={`
+                transition-all duration-200
+                ${
+                  type === "income"
+                    ? "bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-600 dark:hover:bg-emerald-700 active:bg-emerald-700 dark:active:bg-emerald-800"
+                    : "bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 active:bg-red-700 dark:active:bg-red-800"
+                }
+                text-white font-medium relative z-10
+                shadow-md dark:shadow-gray-950/50
+              `}
+              aria-label={`Switch to ${
+                type === "income" ? "expenses" : "incomes"
+              }`}
+              onClick={() => setType(type === "income" ? "expense" : "income")}
             >
               {type === "income" ? "Incomes" : "Expenses"}
             </Button>
