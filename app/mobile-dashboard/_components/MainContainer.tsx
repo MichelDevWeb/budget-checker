@@ -348,7 +348,7 @@ const Overview = ({
 
             <CreateTransactionDialog
               type={type}
-              category="default"
+              category=""
               trigger={
                 <Button
                   className={`

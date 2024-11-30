@@ -179,13 +179,30 @@ const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full">
+                      <PopoverContent
+                        className="w-full p-0"
+                        style={{
+                          position: "fixed",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          width: "100vw",
+                          maxWidth: "320px",
+                          maxHeight: "50vh",
+                          overflowY: "auto",
+                          zIndex: 1000,
+                        }}
+                      >
                         <Picker
                           data={data}
                           theme={theme.resolvedTheme}
                           onEmojiSelect={(emoji: { native: string }) => {
                             field.onChange(emoji.native);
+                            const button =
+                              document.activeElement as HTMLElement;
+                            button?.blur();
                           }}
+                          perLine={8}
                         />
                       </PopoverContent>
                     </Popover>

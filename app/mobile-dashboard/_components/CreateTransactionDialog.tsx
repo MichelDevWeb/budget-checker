@@ -24,10 +24,19 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, Plus, Trash2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CreateTransaction } from "@/app/(dashboard)/_actions/transactions";
 import { NumericFormat } from "react-number-format";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import CreateCategoryDialog from "@/app/(dashboard)/_components/CreateCategoryDialog";
+import { Category } from "@prisma/client";
 
 interface Props {
   trigger: ReactNode;
@@ -38,21 +47,46 @@ interface Props {
 interface TransactionInput
   extends Omit<CreateTransactionSchemaType, "type" | "category"> {
   key: string;
+  category: {
+    name: string;
+    icon: string;
+    type: string;
+  };
 }
 
 const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
   const [transactions, setTransactions] = React.useState<TransactionInput[]>([
-    { key: crypto.randomUUID(), description: "", amount: 0, date: new Date() },
+    {
+      key: crypto.randomUUID(),
+      description: "",
+      amount: 0,
+      date: new Date(),
+      category: {
+        name: category,
+        icon: "",
+        type: type,
+      },
+    },
   ]);
   const [open, setOpen] = React.useState(false);
   const queryClient = useQueryClient();
+  const categoriesQuery = useQuery({
+    queryKey: ["categories", type],
+    queryFn: () =>
+      fetch(`/api/categories?type=${type}`).then((res) => res.json()),
+  });
+  const categories = categoriesQuery.data || [];
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (transactions: TransactionInput[]) => {
       const loadingToast = toast.loading("Creating transactions...");
       try {
         const promises = transactions.map((transaction) =>
-          CreateTransaction({ ...transaction, type, category })
+          CreateTransaction({
+            ...transaction,
+            type,
+            category: transaction.category.name,
+          })
         );
         const result = await Promise.all(promises);
         toast.dismiss(loadingToast);
@@ -70,6 +104,11 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
           description: "",
           amount: 0,
           date: new Date(),
+          category: {
+            name: category,
+            icon: "",
+            type: type,
+          },
         },
       ]);
       queryClient.invalidateQueries({ queryKey: ["overview"] });
@@ -85,6 +124,11 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
         description: "",
         amount: 0,
         date: new Date(),
+        category: {
+          name: category,
+          icon: "",
+          type: type,
+        },
       },
     ]);
   };
@@ -106,6 +150,10 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
 
   const onSubmit = () => {
     mutate(transactions);
+  };
+
+  const onCategoryCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
   };
 
   return (
@@ -156,6 +204,44 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
                   )
                 }
               />
+
+              <div className="flex gap-2">
+                <Select
+                  value={transaction.category.name}
+                  onValueChange={(value) =>
+                    updateTransaction(transaction.key, "category", {
+                      name: value,
+                      icon:
+                        categories.find((c: Category) => c.name === value)
+                          ?.icon || "",
+                      type: type,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category">
+                      {transaction.category.icon} {transaction.category.name}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat: Category) => (
+                      <SelectItem key={cat.name} value={cat.name}>
+                        {cat.icon} {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <CreateCategoryDialog
+                  type={type}
+                  successCallback={onCategoryCreated}
+                  trigger={
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </div>
 
               <NumericFormat
                 value={transaction.amount}
@@ -210,6 +296,11 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
                     description: "",
                     amount: 0,
                     date: new Date(),
+                    category: {
+                      name: category,
+                      icon: "",
+                      type: type,
+                    },
                   },
                 ])
               }
