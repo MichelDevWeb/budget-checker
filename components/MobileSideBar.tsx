@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X, User, Sun, Moon } from "lucide-react";
+import { Menu, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -8,13 +8,6 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { navItems } from "@/lib/nav-config";
 import { useTheme } from "next-themes";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { UserButton } from "@clerk/nextjs";
 
 export default function MobileSideBar() {

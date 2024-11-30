@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Plus } from "lucide-react";
 import { UserSettings } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { GetBalanceStatsResponseType } from "@/app/api/stats/balance/route";
@@ -31,6 +31,7 @@ import MobileCategoriesStats from "./MobileCategoriesStats";
 import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { GetCategoriesStatsResponseType } from "@/app/api/stats/categories/route";
 import { useSwipeable } from "react-swipeable";
+import CreateTransactionDialog from "./CreateTransactionDialog";
 
 const getDateRangeItems = (step?: number) => {
   return [
@@ -325,7 +326,7 @@ const Overview = ({
             expense={expense}
             type={type}
           />
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-2">
             <Button
               className={`
                 transition-all duration-200
@@ -344,6 +345,28 @@ const Overview = ({
             >
               {type === "income" ? "Incomes" : "Expenses"}
             </Button>
+
+            <CreateTransactionDialog
+              type={type}
+              category="default"
+              trigger={
+                <Button
+                  className={`
+                    transition-all duration-200
+                    ${
+                      type === "income"
+                        ? "bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-600 dark:hover:bg-emerald-700 active:bg-emerald-700 dark:active:bg-emerald-800"
+                        : "bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 active:bg-red-700 dark:active:bg-red-800"
+                    }
+                    text-white font-medium relative z-10
+                    shadow-md dark:shadow-gray-950/50
+                  `}
+                  size="icon"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              }
+            />
           </div>
           {statsQuery.data && (
             <MobileCategoriesStats
