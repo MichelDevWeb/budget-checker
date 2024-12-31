@@ -21,8 +21,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { TransactionType } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import {
   CreateCategorySchema,
   CreateCategorySchemaType,
@@ -41,18 +39,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTheme } from "next-themes";
 
 interface Props {
-  type: TransactionType;
   successCallback: (category: Category) => void;
   trigger?: ReactNode;
 }
 
-const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
+const CreateCategoryDialog = ({ successCallback, trigger }: Props) => {
   const [open, setOpen] = React.useState(false);
 
   const form = useForm<CreateCategorySchemaType>({
     resolver: zodResolver(CreateCategorySchema),
     defaultValues: {
-      type,
       name: "",
       icon: "",
     },
@@ -67,7 +63,6 @@ const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
       form.reset({
         name: "",
         icon: "",
-        type,
       });
 
       toast.success(`Category ${data.name} created successfully`, {
@@ -118,16 +113,7 @@ const CreateCategoryDialog = ({ type, successCallback, trigger }: Props) => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Create
-            <span
-              className={cn(
-                "m-1",
-                type === "income" ? "text-emerald-500" : "text-red-500"
-              )}
-            >
-              {type}
-            </span>
-            category
+            Create category
           </DialogTitle>
           <DialogDescription>
             Categories are used to group your transactions.

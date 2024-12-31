@@ -26,9 +26,8 @@ model Category {
   name     String
   userId   String
   icon     String
-  type     String   @default("income")
 
-  @@unique([name, userId, type])
+  @@unique([name, userId])
 }
 
 model Transaction {

@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import React from "react";
 import MainContainer from "./_components/MainContainer";
 
-async function MobileDashboard() {
+// Mark the component as async Server Component
+export default async function MobileDashboard() {
   const user = await currentUser();
   if (!user) {
     redirect("/sign-in");
@@ -15,6 +16,7 @@ async function MobileDashboard() {
       userId: user.id,
     },
   });
+  
   if (!userSettings) {
     redirect("/wizard");
   }
@@ -27,5 +29,3 @@ async function MobileDashboard() {
     </div>
   );
 }
-
-export default MobileDashboard;

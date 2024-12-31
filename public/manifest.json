@@ -1,6 +1,6 @@
 {
-  "name": "Budget Tracker",
-  "short_name": "Budget Tracker",
+  "name": "MDW Budget Tracker",
+  "short_name": "MDW Budget",
   "description": "Budget Tracker PWA application with Next 14",
   "start_url": "/",
   "display": "standalone",

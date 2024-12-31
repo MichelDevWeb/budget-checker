@@ -159,10 +159,7 @@ const CreateTransactionDialog = ({ trigger, type }: Props) => {
                 <FormItem>
                   <FormLabel>Category</FormLabel>
                   <FormControl>
-                    <CategoryPicker
-                      type={type}
-                      onChange={handleCategoryChange}
-                    />
+                    <CategoryPicker onChange={handleCategoryChange} />
                   </FormControl>
                   {/* <FormDescription>Select a category</FormDescription> */}
                 </FormItem>

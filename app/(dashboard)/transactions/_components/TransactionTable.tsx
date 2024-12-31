@@ -1,5 +1,5 @@
 import { GetTransactionHistoryResponseType } from "@/app/api/transactions-history/route";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import {
   ColumnDef,
@@ -25,7 +25,7 @@ import { DataTableColumnHeader } from "@/components/datatable/ColumnHeader";
 import { cn } from "@/lib/utils";
 import { DataTableFacetedFilter } from "@/components/datatable/FacetedFilters";
 import { DataTableViewOptions } from "@/components/datatable/ColumnToggle";
-import { Transaction } from "@prisma/client";
+import type { Transaction } from ".prisma/client";
 import { Button } from "@/components/ui/button";
 import { download, generateCsv, mkConfig } from "export-to-csv";
 import { DownloadIcon, MoreHorizontal } from "lucide-react";
@@ -39,6 +39,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TrashIcon } from "@radix-ui/react-icons";
 import DeleteTransactionDialog from "./DeleteTransactionDialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { bulkDeleteTransactions } from "../_actions/deleteTransaction";
 
 interface Props {
   from: Date;
@@ -49,6 +52,25 @@ const emptyData: [] = [];
 type TransactionHistoryRow = GetTransactionHistoryResponseType[0];
 
 const columns: ColumnDef<TransactionHistoryRow>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: "category",
     header: ({ column }) => (
@@ -137,6 +159,8 @@ const TransactionTable = ({ from, to }: Props) => {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [rowSelection, setRowSelection] = React.useState({});
+  const queryClient = useQueryClient();
   const history = useQuery({
     queryKey: ["transactions", "history", from, to],
     queryFn: async () =>
@@ -151,6 +175,27 @@ const TransactionTable = ({ from, to }: Props) => {
     download(csvConfig)(csv);
   };
 
+  const handleBulkDelete = async () => {
+    const selectedRows = table.getSelectedRowModel().rows;
+    const selectedIds = selectedRows.map((row) => row.original.id);
+
+    if (!selectedIds.length) return;
+
+    toast.promise(
+      bulkDeleteTransactions(selectedIds),
+      {
+        loading: 'Deleting transactions...',
+        success: (result) => {
+          if (!result.success) throw new Error(result.error);
+          queryClient.invalidateQueries({ queryKey: ['transactions'] });
+          setRowSelection({});
+          return `Successfully deleted ${result.count} transactions`;
+        },
+        error: (error) => error.message || 'Failed to delete transactions'
+      }
+    );
+  };
+
   const table = useReactTable({
     data: history.data || emptyData,
     columns,
@@ -158,7 +203,10 @@ const TransactionTable = ({ from, to }: Props) => {
     state: {
       sorting,
       columnFilters,
+      rowSelection,
     },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getSortedRowModel: getSortedRowModel(),
@@ -182,6 +230,17 @@ const TransactionTable = ({ from, to }: Props) => {
     <div className="w-full">
       <div className="flex flex-wrap items-end justify-between gap-2 py-4">
         <div className="flex gap-2">
+          {Object.keys(rowSelection).length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              className="gap-2"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Delete Selected ({Object.keys(rowSelection).length})
+            </Button>
+          )}
           {table.getColumn("category") && (
             <DataTableFacetedFilter
               title="Category"

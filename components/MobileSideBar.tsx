@@ -29,7 +29,7 @@ export default function MobileSideBar() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed left-4 bottom-4 z-30 rounded-full bg-primary p-3 text-primary-foreground shadow-lg transition-all duration-300",
+          "fixed left-2 bottom-2 z-30 rounded-full bg-primary p-3 text-primary-foreground shadow-lg transition-all duration-300",
           isOpen ? "opacity-0" : "opacity-100"
         )}
       >

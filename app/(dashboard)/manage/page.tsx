@@ -9,18 +9,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TransactionType } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
-import { PlusCircle, TrashIcon, TrendingDown, TrendingUp } from "lucide-react";
+import { PlusCircle, TrashIcon } from "lucide-react";
 import React from "react";
-import CreateCategoryDialog from "../_components/CreateCategoryDialog";
+import CreateCategoryDialog from "@/app/(dashboard)/_components/CreateCategoryDialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import { Category } from "@prisma/client";
-import DeleteCategoryDialog from "../_components/DeleteCategoryDialog";
+import type { Category } from ".prisma/client";
+import DeleteCategoryDialog from "@/app/(dashboard)/_components/DeleteCategoryDialog";
 
 const page = () => {
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => fetch(`/api/categories`).then((res) => res.json()),
+  });
+  const dataAvailable = categoriesQuery.data && categoriesQuery.data.length > 0;
+
   return (
     <>
       {/* HEADER */}
@@ -47,85 +51,54 @@ const page = () => {
             <CurrencyComboBox />
           </CardContent>
         </Card>
-        <CategoryList type="income" />
-        <CategoryList type="expense" />
+        <SkeletonWrapper isLoading={categoriesQuery.isLoading}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div>
+                    Categories
+                    <div className="text-sm text-muted-foreground">
+                      Sorted by name
+                    </div>
+                  </div>
+                </div>
+
+                <CreateCategoryDialog
+                  successCallback={() => categoriesQuery.refetch()}
+                  trigger={
+                    <Button className="gap-2 text-sm">
+                      <PlusCircle className="h-4 w-4" />
+                      Create category
+                    </Button>
+                  }
+                />
+              </CardTitle>
+            </CardHeader>
+            <Separator />
+            {!dataAvailable && (
+              <div className="flex h-40 w-full flex-col items-center justify-center">
+                <p>No categories yet</p>
+                <p className="text-sm text-muted-foreground">
+                  Create one to get started
+                </p>
+              </div>
+            )}
+            {dataAvailable && (
+              <div className="grid grid-flow-row gap-2 p-2 sm:grid-flow-row sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {categoriesQuery.data.map((category: Category) => (
+                  <CategoryCard category={category} key={category.name} />
+                ))}
+              </div>
+            )}
+          </Card>
+        </SkeletonWrapper>
       </div>
     </>
   );
 };
 
 export default page;
-
-function CategoryList({ type }: { type: TransactionType }) {
-  const categoriesQuery = useQuery({
-    queryKey: ["categories", type],
-    queryFn: () =>
-      fetch(`/api/categories?type=${type}`).then((res) => res.json()),
-  });
-  const dataAvailable = categoriesQuery.data && categoriesQuery.data.length > 0;
-
-  return (
-    <SkeletonWrapper isLoading={categoriesQuery.isLoading}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              {type === "expense" ? (
-                <TrendingDown className="h-12 w-12 items-center rounded-lg bg-red-400/10 p-2 text-red-500" />
-              ) : (
-                <TrendingUp className="h-12 w-12 items-center rounded-lg bg-emerald-400/10 p-2 text-emerald-500" />
-              )}
-              <div>
-                {type === "income" ? "Incomes" : "Expenses"}
-                <div className="text-sm text-muted-foreground">
-                  Sorted by name
-                </div>
-              </div>
-            </div>
-
-            <CreateCategoryDialog
-              type={type}
-              successCallback={() => categoriesQuery.refetch()}
-              trigger={
-                <Button className="gap-2 text-sm">
-                  <PlusCircle className="h-4 w-4" />
-                  Create category
-                </Button>
-              }
-            />
-          </CardTitle>
-        </CardHeader>
-        <Separator />
-        {!dataAvailable && (
-          <div className="flex h-40 w-full flex-col items-center justify-center">
-            <p>
-              No
-              <span
-                className={cn(
-                  "m-1",
-                  type === "income" ? "text-emerald-500" : "text-red-500"
-                )}
-              >
-                {type}
-              </span>
-              categories yet
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Create one to get started
-            </p>
-          </div>
-        )}
-        {dataAvailable && (
-          <div className="grid grid-flow-row gap-2 p-2 sm:grid-flow-row sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {categoriesQuery.data.map((category: Category) => (
-              <CategoryCard category={category} key={category.name} />
-            ))}
-          </div>
-        )}
-      </Card>
-    </SkeletonWrapper>
-  );
-}
 
 function CategoryCard({ category }: { category: Category }) {
   return (

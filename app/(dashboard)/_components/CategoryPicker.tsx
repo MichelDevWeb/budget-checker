@@ -14,7 +14,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { TransactionType } from "@/lib/types";
 import { Category } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
@@ -23,10 +22,9 @@ import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 interface Props {
-  type: TransactionType;
   onChange: (value: string) => void;
 }
-const CategoryPicker = ({ type, onChange }: Props) => {
+const CategoryPicker = ({ onChange }: Props) => {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
 
@@ -37,9 +35,9 @@ const CategoryPicker = ({ type, onChange }: Props) => {
   }, [value, onChange]);
 
   const categoriesQuery = useQuery({
-    queryKey: ["categories", { type }],
+    queryKey: ["categories"],
     queryFn: async () => {
-      const response = await fetch(`/api/categories?type=${type}`);
+      const response = await fetch(`/api/categories`);
       return response.json();
     },
   });
@@ -79,7 +77,7 @@ const CategoryPicker = ({ type, onChange }: Props) => {
           }}
         >
           <CommandInput placeholder="Search category..." />
-          <CreateCategoryDialog type={type} successCallback={successCallback} />
+          <CreateCategoryDialog successCallback={successCallback} />
           <CommandEmpty>
             <p>Category not found</p>
             <p className="text-xs text-muted-foreground">

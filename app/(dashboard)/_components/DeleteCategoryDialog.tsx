@@ -16,7 +16,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { TransactionType } from "@/lib/types";
 
 interface Props {
   trigger: ReactNode;
@@ -24,7 +23,7 @@ interface Props {
 }
 
 const DeleteCategoryDialog = ({ trigger, category }: Props) => {
-  const categoryIdentifier = `${category.name}-${category.type}`;
+  const categoryIdentifier = `${category.name}`;
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
@@ -64,7 +63,6 @@ const DeleteCategoryDialog = ({ trigger, category }: Props) => {
               });
               deleteMutation.mutate({
                 name: category.name,
-                type: category.type as TransactionType,
               });
             }}
           >

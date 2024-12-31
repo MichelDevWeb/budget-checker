@@ -6,6 +6,7 @@ import { differenceInDays, startOfMonth } from "date-fns";
 import React from "react";
 import { toast } from "sonner";
 import TransactionTable from "./_components/TransactionTable";
+import TransactionImportDialog from "./_components/TransactionImportDialog";
 
 const TransactionsPage = () => {
   const [dateRange, setDateRange] = React.useState<{ from: Date; to: Date }>({
@@ -19,25 +20,26 @@ const TransactionsPage = () => {
           <div>
             <p className="text-3xl font-bold">Transactions History</p>
           </div>
-          <DateRangePicker
-            locale="vi-VN"
-            initialDateFrom={dateRange.from}
-            initialDateTo={dateRange.to}
-            showCompare={false}
-            onUpdate={(values) => {
-              const { from, to } = values.range;
-              // We update the date range only if both dates are set
-
-              if (!from || !to) return;
-              if (differenceInDays(from, to) > MAX_DATE_RANGE_DAYS) {
-                toast.error(
-                  `The selected date range is too long. Please select a range of ${MAX_DATE_RANGE_DAYS} days or less.`
-                );
-                return;
-              }
-              setDateRange({ from, to });
-            }}
-          />
+          <div className="flex items-center gap-4">
+            <TransactionImportDialog />
+            <DateRangePicker
+              locale="vi-VN"
+              initialDateFrom={dateRange.from}
+              initialDateTo={dateRange.to}
+              showCompare={false}
+              onUpdate={(values) => {
+                const { from, to } = values.range;
+                if (!from || !to) return;
+                if (differenceInDays(from, to) > MAX_DATE_RANGE_DAYS) {
+                  toast.error(
+                    `The selected date range is too long. Please select a range of ${MAX_DATE_RANGE_DAYS} days or less.`
+                  );
+                  return;
+                }
+                setDateRange({ from, to });
+              }}
+            />
+          </div>
         </div>
       </div>
       <div className="container px-6 mx-auto">

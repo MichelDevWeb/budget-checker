@@ -9,10 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TransactionType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CreateTransactionSchemaType } from "@/schema/transaction";
-import { ReactNode } from "react";
 import React from "react";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,7 +24,7 @@ import { CalendarIcon, Loader2, Plus, Trash2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CreateTransaction } from "@/app/(dashboard)/_actions/transactions";
+import { CreateTransaction, UpdateTransaction } from "@/app/(dashboard)/_actions/transactions";
 import { NumericFormat } from "react-number-format";
 import {
   Select,
@@ -36,13 +34,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CreateCategoryDialog from "@/app/(dashboard)/_components/CreateCategoryDialog";
-import { Category } from "@prisma/client";
-
-interface Props {
-  trigger: ReactNode;
-  type: TransactionType;
-  category: string;
-}
+import { Category, Transaction } from "@prisma/client";
+import { TransactionType } from "@/lib/types";
 
 interface TransactionInput
   extends Omit<CreateTransactionSchemaType, "type" | "category"> {
@@ -50,34 +43,64 @@ interface TransactionInput
   category: {
     name: string;
     icon: string;
-    type: string;
   };
 }
 
-const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
+interface CreateTransactionDialogProps {
+  type: TransactionType;
+  category?: { name: string; icon: string } | null;
+  trigger: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  editTransaction?: Transaction | null;
+}
+
+const CreateTransactionDialog = ({ 
+  type, 
+  category, 
+  trigger,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  editTransaction,
+}: CreateTransactionDialogProps) => {
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const onOpenChange = isControlled ? controlledOnOpenChange : setInternalOpen;
+
+  // Initialize with editTransaction data if it exists
   const [transactions, setTransactions] = React.useState<TransactionInput[]>([
     {
       key: crypto.randomUUID(),
-      description: "",
-      amount: 0,
-      date: new Date(),
+      description: editTransaction?.description || "",
+      amount: editTransaction?.amount || 0,
+      date: editTransaction?.date ? new Date(editTransaction.date) : new Date(),
       category: {
-        name: category,
-        icon: "",
-        type: type,
+        name: category?.name || "Khác",
+        icon: category?.icon || "⭐️",
       },
     },
   ]);
-  const [open, setOpen] = React.useState(false);
+
+  console.log(transactions);
+
   const queryClient = useQueryClient();
   const categoriesQuery = useQuery({
-    queryKey: ["categories", type],
+    queryKey: ["categories"],
     queryFn: () =>
-      fetch(`/api/categories?type=${type}`).then((res) => res.json()),
+      fetch(`/api/categories`).then((res) => res.json()),
+    enabled: !category,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
-  const categories = categoriesQuery.data || [];
+  const categories = React.useMemo(() => {
+    if (category) {
+      return [category];
+    }
+    return categoriesQuery.data || [];
+  }, [category, categoriesQuery.data]);
 
-  const { mutate, isPending } = useMutation({
+  const { mutate: createMutation, isPending: isCreating } = useMutation({
     mutationFn: async (transactions: TransactionInput[]) => {
       const loadingToast = toast.loading("Creating transactions...");
       try {
@@ -98,23 +121,53 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
     },
     onSuccess: () => {
       toast.success("Transactions created successfully");
-      setTransactions([
-        {
-          key: crypto.randomUUID(),
-          description: "",
-          amount: 0,
-          date: new Date(),
-          category: {
-            name: category,
-            icon: "",
-            type: type,
-          },
-        },
-      ]);
+      resetForm();
       queryClient.invalidateQueries({ queryKey: ["overview"] });
-      setOpen(false);
+      setInternalOpen(false);
     },
   });
+
+  const { mutate: updateMutation, isPending: isUpdating } = useMutation({
+    mutationFn: async (transaction: TransactionInput) => {
+      const loadingToast = toast.loading("Updating transaction...");
+      try {
+        if (!editTransaction?.id) throw new Error("No transaction ID");
+        
+        await UpdateTransaction(editTransaction.id, {
+          amount: transaction.amount,
+          date: transaction.date,
+          description: transaction.description || "",
+        });
+        
+        toast.dismiss(loadingToast);
+      } catch (error) {
+        toast.dismiss(loadingToast);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Transaction updated successfully");
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ["overview"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      setInternalOpen(false);
+    },
+  });
+
+  const resetForm = () => {
+    setTransactions([
+      {
+        key: crypto.randomUUID(),
+        description: "",
+        amount: 0,
+        date: new Date(),
+        category: {
+          name: category?.name || "Khác",
+          icon: category?.icon || "⭐️",
+        },
+      },
+    ]);
+  };
 
   const addTransaction = () => {
     setTransactions([
@@ -125,9 +178,8 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
         amount: 0,
         date: new Date(),
         category: {
-          name: category,
-          icon: "",
-          type: type,
+          name: category?.name || "Khác",
+          icon: category?.icon || "⭐️",
         },
       },
     ]);
@@ -149,29 +201,85 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
   };
 
   const onSubmit = () => {
-    mutate(transactions);
+    if (editTransaction) {
+      // Update single transaction
+      updateMutation(transactions[0]);
+    } else {
+      // Create new transaction(s)
+      createMutation(transactions);
+    }
   };
 
   const onCategoryCreated = () => {
     queryClient.invalidateQueries({ queryKey: ["categories"] });
   };
 
+  const renderCategoryInput = (transaction: TransactionInput) => {
+    if (category) {
+      return (
+        <div className="flex gap-2 items-center border rounded-md p-2">
+          <span>{category.icon}</span>
+          <input 
+            type="text" 
+            value={category.name}
+            readOnly
+            className="w-full bg-transparent outline-none"
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex gap-2">
+        <Select
+          value={transaction.category.name}
+          onValueChange={(value) =>
+            updateTransaction(transaction.key, "category", {
+              name: value,
+              icon: categories.find((c: Category) => c.name === value)?.icon || "",
+            })
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select category">
+              {transaction.category.icon} {transaction.category.name}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((cat: Category) => (
+              <SelectItem key={cat.name} value={cat.name}>
+                {cat.icon} {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <CreateCategoryDialog
+          successCallback={onCategoryCreated}
+          trigger={
+            <Button variant="outline" size="icon">
+              <Plus className="h-4 w-4" />
+            </Button>
+          }
+        />
+      </div>
+    );
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            Create new{" "}
-            <span
-              className={cn(
-                "m-1",
-                type === "income" ? "text-emerald-500" : "text-red-500"
-              )}
-            >
+            {editTransaction ? "Edit" : "Create new"}{" "}
+            <span className={cn(
+              "m-1",
+              type === "income" ? "text-emerald-500" : "text-red-500"
+            )}>
               {type}
             </span>
-            transactions
+            {!editTransaction && "transactions"}
           </DialogTitle>
         </DialogHeader>
 
@@ -205,43 +313,7 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
                 }
               />
 
-              <div className="flex gap-2">
-                <Select
-                  value={transaction.category.name}
-                  onValueChange={(value) =>
-                    updateTransaction(transaction.key, "category", {
-                      name: value,
-                      icon:
-                        categories.find((c: Category) => c.name === value)
-                          ?.icon || "",
-                      type: type,
-                    })
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category">
-                      {transaction.category.icon} {transaction.category.name}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat: Category) => (
-                      <SelectItem key={cat.name} value={cat.name}>
-                        {cat.icon} {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <CreateCategoryDialog
-                  type={type}
-                  successCallback={onCategoryCreated}
-                  trigger={
-                    <Button variant="outline" size="icon">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-              </div>
+              {renderCategoryInput(transaction)}
 
               <NumericFormat
                 value={transaction.amount}
@@ -279,38 +351,23 @@ const CreateTransactionDialog = ({ trigger, type, category }: Props) => {
             </div>
           ))}
 
-          <Button variant="outline" className="w-full" onClick={addTransaction}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Another Transaction
-          </Button>
+          {!editTransaction && (
+            <Button variant="outline" className="w-full" onClick={addTransaction}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Another Transaction
+            </Button>
+          )}
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                setTransactions([
-                  {
-                    key: crypto.randomUUID(),
-                    description: "",
-                    amount: 0,
-                    date: new Date(),
-                    category: {
-                      name: category,
-                      icon: "",
-                      type: type,
-                    },
-                  },
-                ])
-              }
-            >
+            <Button variant="secondary" onClick={resetForm}>
               Cancel
             </Button>
           </DialogClose>
-          <Button onClick={onSubmit} disabled={isPending}>
-            {!isPending ? "Create All" : "Creating..."}
-            {isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+          <Button onClick={onSubmit} disabled={isCreating || isUpdating}>
+            {!isCreating && !isUpdating ? (editTransaction ? "Update" : "Create All") : (editTransaction ? "Updating..." : "Creating...")}
+            {(isCreating || isUpdating) && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
           </Button>
         </DialogFooter>
       </DialogContent>

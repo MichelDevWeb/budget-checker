@@ -2,6 +2,7 @@
 "use client";
 
 import { GetFormatterForCurrency } from "@/lib/helpers";
+import { isMobile } from "@/lib/utils";
 import React, { useCallback, useState } from "react";
 import { PieChart, Pie, Sector, Cell } from "recharts";
 
@@ -131,6 +132,8 @@ export default function PieChartOverview({
     },
     [setActiveIndex]
   );
+  const isDeviceMobile = window ? isMobile(window.navigator.userAgent) : true;
+
   if (data?.length > 0) {
     data = data.map((el: { category: string; _sum: { amount: number } }) => ({
       name: el.category,
@@ -143,8 +146,7 @@ export default function PieChartOverview({
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          width: "100%",
-          height: 270,
+          height: isDeviceMobile ? 225 : 270,
           marginLeft: "15px",
           marginTop: "30px",
         }}

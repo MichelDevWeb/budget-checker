@@ -2,7 +2,7 @@ import { LayoutDashboard, PiggyBank, Receipt, Settings } from "lucide-react";
 
 export const navItems = [
   {
-    href: "/dashboard",
+    href: "/",
     label: "Dashboard",
     icon: LayoutDashboard,
   },

@@ -3,18 +3,12 @@
 import React from "react";
 import { ChevronsLeft, ChevronsRight, Plus } from "lucide-react";
 import { UserSettings } from "@prisma/client";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GetBalanceStatsResponseType } from "@/app/api/stats/balance/route";
-import { DateToUTCDate, GetFormatterForCurrency } from "@/lib/helpers";
+import { DateToUTCDate, GetFormatterForCurrency, getDateRangeItems, getStepByIndex } from "@/lib/helpers";
 import {
-  endOfMonth,
   endOfToday,
-  endOfWeek,
-  endOfYear,
-  startOfMonth,
   startOfToday,
-  startOfWeek,
-  startOfYear,
 } from "date-fns";
 import CountUp from "react-countup";
 import {
@@ -33,129 +27,9 @@ import { GetCategoriesStatsResponseType } from "@/app/api/stats/categories/route
 import { useSwipeable } from "react-swipeable";
 import CreateTransactionDialog from "./CreateTransactionDialog";
 
-const getDateRangeItems = (step?: number) => {
-  return [
-    {
-      label: "Tất cả thời gian",
-      from: new Date("2000-01-01"),
-      to: new Date("2100-12-30"),
-    },
-    {
-      label:
-        step && step !== 0
-          ? new Date(
-              new Date().setDate(new Date().getDate() + step)
-            ).toLocaleDateString("vi-VN")
-          : `Hôm nay (${new Date().toLocaleDateString("vi-VN")})`,
-
-      from:
-        step && step !== 0
-          ? new Date(new Date().setDate(new Date().getDate() + step))
-          : new Date(),
-      to:
-        step && step !== 0
-          ? new Date(new Date().setDate(new Date().getDate() + step))
-          : new Date(),
-    },
-    {
-      label:
-        step && step !== 0
-          ? `${startOfWeek(
-              new Date(new Date().setDate(new Date().getDate() + step))
-            ).toLocaleDateString("vi-VN")} - ${endOfWeek(
-              new Date(new Date().setDate(new Date().getDate() + step))
-            ).toLocaleDateString("vi-VN")}`
-          : `Tuần này (${startOfWeek(new Date()).toLocaleDateString(
-              "vi-VN"
-            )} - ${endOfWeek(new Date()).toLocaleDateString("vi-VN")})`,
-      from:
-        step && step !== 0
-          ? startOfWeek(
-              new Date(
-                new Date(new Date().setDate(new Date().getDate() + step))
-              )
-            )
-          : startOfWeek(new Date()),
-      to:
-        step && step !== 0
-          ? endOfWeek(
-              new Date(
-                new Date(new Date().setDate(new Date().getDate() + step))
-              )
-            )
-          : endOfWeek(new Date()),
-    },
-    {
-      label:
-        step && step !== 0
-          ? `${
-              new Date(
-                new Date().setDate(new Date().getDate() + step)
-              ).getMonth() + 1
-            }/${new Date(
-              new Date().setDate(new Date().getDate() + step)
-            ).getFullYear()}`
-          : `Tháng này (${
-              new Date().getMonth() + 1
-            }/${new Date().getFullYear()})`,
-      from:
-        step && step !== 0
-          ? startOfMonth(
-              new Date(
-                new Date(new Date().setDate(new Date().getDate() + step))
-              )
-            )
-          : startOfMonth(new Date()),
-      to:
-        step && step !== 0
-          ? endOfMonth(
-              new Date(
-                new Date(new Date().setDate(new Date().getDate() + step))
-              )
-            )
-          : endOfMonth(new Date()),
-    },
-    {
-      label:
-        step && step !== 0
-          ? new Date(
-              new Date().setDate(new Date().getDate() + step)
-            ).getFullYear()
-          : `Năm nay (${new Date().getFullYear()})`,
-      from:
-        step && step !== 0
-          ? startOfYear(
-              new Date(
-                new Date(new Date().setDate(new Date().getDate() + step))
-              )
-            )
-          : startOfYear(new Date()),
-      to:
-        step && step !== 0
-          ? endOfYear(
-              new Date(
-                new Date(new Date().setDate(new Date().getDate() + step))
-              )
-            )
-          : endOfYear(new Date()),
-    },
-  ];
-};
-
-const getStepByIndex = (index: number) => {
-  switch (index) {
-    case 2:
-      return 7;
-    case 3:
-      return 31;
-    case 4:
-      return 366;
-    default:
-      return 1;
-  }
-};
-
 const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
+  console.log("MainContainer rendered");
+
   const [dateRange, setDateRange] = React.useState<{
     from: Date;
     to: Date;
@@ -165,13 +39,63 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
   });
   const [selectedDateRangeIndex, setSelectedDateRangeIndex] = React.useState(1);
   const [step, setStep] = React.useState<number>(0);
+  const queryClient = useQueryClient();
+
+  // Background prefetching for next/previous periods
+  const prefetchAdjacentData = React.useCallback(async () => {
+    const nextStep = step + getStepByIndex(selectedDateRangeIndex);
+    const prevStep = step - getStepByIndex(selectedDateRangeIndex);
+    console.log(nextStep, prevStep);
+
+    // Prefetch next period
+    const nextRange = {
+      from: getDateRangeItems(nextStep)[selectedDateRangeIndex].from,
+      to: getDateRangeItems(nextStep)[selectedDateRangeIndex].to,
+    };
+
+    // Prefetch previous period
+    const prevRange = {
+      from: getDateRangeItems(prevStep)[selectedDateRangeIndex].from,
+      to: getDateRangeItems(prevStep)[selectedDateRangeIndex].to,
+    };
+
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: ["overview", "stats", nextRange.from, nextRange.to],
+        queryFn: () =>
+          fetch(
+            `/api/stats/balance?from=${nextRange.from}&to=${nextRange.to}`
+          ).then((res) => res.json()),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ["overview", "stats", prevRange.from, prevRange.to],
+        queryFn: () =>
+          fetch(
+            `/api/stats/balance?from=${prevRange.from}&to=${prevRange.to}`
+          ).then((res) => res.json()),
+      }),
+    ]);
+  }, [step, selectedDateRangeIndex, queryClient]);
+
+  // Main data query with stale time and caching
   const statsQuery = useQuery<GetBalanceStatsResponseType>({
     queryKey: ["overview", "stats", dateRange.from, dateRange.to],
     queryFn: () =>
       fetch(
         `/api/stats/balance?from=${dateRange.from}&to=${dateRange.to}`
       ).then((res) => res.json()),
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData
   });
+
+  // Prefetch adjacent periods when current data is loaded
+  React.useEffect(() => {
+    if (statsQuery.data) {
+      prefetchAdjacentData();
+    }
+  }, [statsQuery.data, prefetchAdjacentData]);
 
   const formatter = React.useMemo(() => {
     return GetFormatterForCurrency(userSettings.currency);
@@ -183,28 +107,24 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
 
   const _onSwipedLeft = () => {
     if (selectedDateRangeIndex === 0) return;
-    console.log("Swiped Left!");
     const _step = step + getStepByIndex(selectedDateRangeIndex);
-
     setStep(_step);
-    console.log(_step);
     setDateRange({
       from: getDateRangeItems(_step)[selectedDateRangeIndex].from,
       to: getDateRangeItems(_step)[selectedDateRangeIndex].to,
     });
   };
+
   const _onSwipedRight = () => {
     if (selectedDateRangeIndex === 0) return;
-    console.log("Swiped Right!");
     const _step = step - getStepByIndex(selectedDateRangeIndex);
-
     setStep(_step);
-    console.log(_step);
     setDateRange({
       from: getDateRangeItems(_step)[selectedDateRangeIndex].from,
       to: getDateRangeItems(_step)[selectedDateRangeIndex].to,
     });
   };
+
   const handlers = useSwipeable({
     onSwipedLeft: () => _onSwipedLeft(),
     onSwipedRight: () => _onSwipedRight(),
@@ -227,7 +147,7 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
               end={balance}
               decimal="2"
               formattingFn={(value) => formatter.format(value)}
-              className="text-3xl font-bold ml-4 dark:text-gray-100"
+              className="text-2xl font-bold ml-4 dark:text-gray-100"
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -268,8 +188,7 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
           </div>
 
           <ChevronsRight
-            className="h-10 w-10 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 
-              active:opacity-50 transition-all cursor-pointer"
+            className="h-10 w-10 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 active:opacity-50 transition-all cursor-pointer"
             onClick={() => _onSwipedLeft()}
           />
         </div>
@@ -282,7 +201,7 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
         userSettings={userSettings}
       />
     </div>
-  );
+  )
 };
 
 interface OverviewProps {
@@ -292,41 +211,44 @@ interface OverviewProps {
   userSettings: UserSettings;
 }
 
-const Overview = ({
+const Overview = React.memo(({
   dateRange,
   income,
   expense,
   userSettings,
 }: OverviewProps) => {
+  console.log('Overview');
   const [type, setType] = React.useState<"expense" | "income">("expense");
+  
   const statsQuery = useQuery<GetCategoriesStatsResponseType>({
-    queryKey: ["overview", "stats", "categories", dateRange.from, dateRange.to],
+    queryKey: ["overview", "stats", "categories", dateRange.from, dateRange.to, type],
     queryFn: () =>
       fetch(
         `/api/stats/categories?type=${type}&from=${DateToUTCDate(
           dateRange.from
         )}&to=${DateToUTCDate(dateRange.to)}`
       ).then((res) => res.json()),
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000,
   });
+
   const formatter = React.useMemo(() => {
     return GetFormatterForCurrency(userSettings.currency);
   }, [userSettings.currency]);
-
-  React.useEffect(() => {
-    statsQuery.refetch();
-  }, [type]);
 
   if (dateRange.from && dateRange.to) {
     return (
       <>
         <SkeletonWrapper isLoading={statsQuery.isFetching}>
-          <PieChartOverview
-            data={statsQuery.data}
-            income={income}
-            expense={expense}
-            type={type}
-          />
-          <div className="flex justify-center gap-2">
+          {statsQuery.data && (
+            <PieChartOverview
+              data={statsQuery.data}
+              income={income}
+              expense={expense}
+              type={type}
+            />
+          )}
+          <div className="fixed bottom-2 right-2 flex gap-2 z-50">
             <Button
               className={`
                 transition-all duration-200
@@ -335,12 +257,10 @@ const Overview = ({
                     ? "bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-600 dark:hover:bg-emerald-700 active:bg-emerald-700 dark:active:bg-emerald-800"
                     : "bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 active:bg-red-700 dark:active:bg-red-800"
                 }
-                text-white font-medium relative z-10
-                shadow-md dark:shadow-gray-950/50
+                text-white font-medium shadow-lg
+                rounded-full px-6 h-12
               `}
-              aria-label={`Switch to ${
-                type === "income" ? "expenses" : "incomes"
-              }`}
+              aria-label={`Switch to ${type === "income" ? "expenses" : "incomes"}`}
               onClick={() => setType(type === "income" ? "expense" : "income")}
             >
               {type === "income" ? "Incomes" : "Expenses"}
@@ -348,24 +268,23 @@ const Overview = ({
 
             <CreateTransactionDialog
               type={type}
-              category=""
-              trigger={
-                <Button
-                  className={`
-                    transition-all duration-200
-                    ${
-                      type === "income"
-                        ? "bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-600 dark:hover:bg-emerald-700 active:bg-emerald-700 dark:active:bg-emerald-800"
-                        : "bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 active:bg-red-700 dark:active:bg-red-800"
-                    }
-                    text-white font-medium relative z-10
-                    shadow-md dark:shadow-gray-950/50
-                  `}
-                  size="icon"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              }
+              category={null}
+                trigger={
+                  <Button
+                    className={`
+                      transition-all duration-200
+                      ${
+                        type === "income"
+                          ? "bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-600 dark:hover:bg-emerald-700 active:bg-emerald-700 dark:active:bg-emerald-800"
+                          : "bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 active:bg-red-700 dark:active:bg-red-800"
+                      }
+                      text-white font-medium shadow-lg
+                      rounded-full h-12 w-12
+                    `}
+                  >
+                    <Plus className="h-6 w-6" />
+                  </Button>
+                }
             />
           </div>
           {statsQuery.data && (
@@ -373,12 +292,13 @@ const Overview = ({
               data={statsQuery.data}
               formatter={formatter}
               type={type}
+              dateRange={dateRange}
             />
           )}
         </SkeletonWrapper>
       </>
     );
   }
-};
+});
 
 export default MainContainer;
