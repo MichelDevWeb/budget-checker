@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import type { Category } from ".prisma/client";
 import DeleteCategoryDialog from "@/app/(dashboard)/_components/DeleteCategoryDialog";
 
-const page = () => {
+const ManagePage = () => {
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
     queryFn: () => fetch(`/api/categories`).then((res) => res.json()),
@@ -98,7 +98,7 @@ const page = () => {
   );
 };
 
-export default page;
+export default ManagePage;
 
 function CategoryCard({ category }: { category: Category }) {
   return (

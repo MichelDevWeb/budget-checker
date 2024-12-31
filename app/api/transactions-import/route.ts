@@ -30,112 +30,7 @@ interface Transaction {
     userId: string;
 }
 
-async function updateHistoryAggregates(tx: Prisma.TransactionClient, transactions: Transaction[]) {
-    // Group transactions by month and year using a single pass
-    const aggregates = transactions.reduce((acc, { date, amount, type, userId }) => {
-        const day = date.getUTCDate();
-        const month = date.getUTCMonth();
-        const year = date.getUTCFullYear();
-        const isExpense = type === "expense";
-
-        const monthKey = `${year}-${month}-${day}-${userId}`;
-        const yearKey = `${year}-${month}-${userId}`;
-
-        // Update month aggregates
-        if (!acc.months.has(monthKey)) {
-            acc.months.set(monthKey, {
-                userId, day, month, year,
-                expense: 0, income: 0
-            });
-        }
-        const monthData = acc.months.get(monthKey);
-        isExpense ? monthData.expense += amount : monthData.income += amount;
-
-        // Update year aggregates
-        if (!acc.years.has(yearKey)) {
-            acc.years.set(yearKey, {
-                userId, month, year,
-                expense: 0, income: 0
-            });
-        }
-        const yearData = acc.years.get(yearKey);
-        isExpense ? yearData.expense += amount : yearData.income += amount;
-
-        return acc;
-    }, {
-        months: new Map(),
-        years: new Map()
-    });
-
-    // Process in smaller chunks to avoid timeouts
-    const CHUNK_SIZE = 50;
-    const monthUpdates = Array.from(aggregates.months.values());
-    const yearUpdates = Array.from(aggregates.years.values());
-
-    // Process month history updates in chunks
-    for (let i = 0; i < monthUpdates.length; i += CHUNK_SIZE) {
-        const chunk = monthUpdates.slice(i, i + CHUNK_SIZE);
-        await Promise.all(chunk.map(data => 
-            tx.monthHistory.upsert({
-                where: {
-                    day_month_year_userId: {
-                        userId: data.userId,
-                        day: data.day,
-                        month: data.month,
-                        year: data.year,
-                    },
-                },
-                create: {
-                    userId: data.userId,
-                    day: data.day,
-                    month: data.month,
-                    year: data.year,
-                    expense: data.expense,
-                    income: data.income,
-                },
-                update: {
-                    expense: { increment: data.expense },
-                    income: { increment: data.income },
-                },
-            }).catch((error: any) => {
-                console.error('Failed to update month history:', error);
-                return null; // Continue with other updates
-            })
-        ));
-    }
-
-    // Process year history updates in chunks
-    for (let i = 0; i < yearUpdates.length; i += CHUNK_SIZE) {
-        const chunk = yearUpdates.slice(i, i + CHUNK_SIZE);
-        await Promise.all(chunk.map(data => 
-            tx.yearHistory.upsert({
-                where: {
-                    month_year_userId: {
-                        userId: data.userId,
-                        month: data.month,
-                        year: data.year,
-                    },
-                },
-                create: {
-                    userId: data.userId,
-                    month: data.month,
-                    year: data.year,
-                    expense: data.expense,
-                    income: data.income,
-                },
-                update: {
-                    expense: { increment: data.expense },
-                    income: { increment: data.income },
-                },
-            }).catch((error: any) => {
-                console.error('Failed to update year history:', error);
-                return null; // Continue with other updates
-            })
-        ));
-    }
-}
-
-export async function createManyTransactions(transactions: Transaction[]) {
+async function createManyTransactions(transactions: Transaction[]) {
     try {
         // Process in smaller batches
         const BATCH_SIZE = 500; // Reduced batch size
@@ -205,6 +100,111 @@ export async function createManyTransactions(transactions: Transaction[]) {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to create transactions'
         };
+    }
+}
+
+async function updateHistoryAggregates(tx: Prisma.TransactionClient, transactions: Transaction[]) {
+    // Group transactions by month and year using a single pass
+    const aggregates = transactions.reduce((acc, { date, amount, type, userId }) => {
+        const day = date.getUTCDate();
+        const month = date.getUTCMonth();
+        const year = date.getUTCFullYear();
+        const isExpense = type === "expense";
+
+        const monthKey = `${year}-${month}-${day}-${userId}`;
+        const yearKey = `${year}-${month}-${userId}`;
+
+        // Update month aggregates
+        if (!acc.months.has(monthKey)) {
+            acc.months.set(monthKey, {
+                userId, day, month, year,
+                expense: 0, income: 0
+            });
+        }
+        const monthData = acc.months.get(monthKey);
+        monthData[isExpense ? 'expense' : 'income'] += amount;
+
+        // Update year aggregates
+        if (!acc.years.has(yearKey)) {
+            acc.years.set(yearKey, {
+                userId, month, year,
+                expense: 0, income: 0
+            });
+        }
+        const yearData = acc.years.get(yearKey);
+        yearData[isExpense ? 'expense' : 'income'] += amount;
+
+        return acc;
+    }, {
+        months: new Map(),
+        years: new Map()
+    });
+
+    // Process in smaller chunks to avoid timeouts
+    const CHUNK_SIZE = 50;
+    const monthUpdates = Array.from(aggregates.months.values());
+    const yearUpdates = Array.from(aggregates.years.values());
+
+    // Process month history updates in chunks
+    for (let i = 0; i < monthUpdates.length; i += CHUNK_SIZE) {
+        const chunk = monthUpdates.slice(i, i + CHUNK_SIZE);
+        await Promise.all(chunk.map(data => 
+            tx.monthHistory.upsert({
+                where: {
+                    day_month_year_userId: {
+                        userId: data.userId,
+                        day: data.day,
+                        month: data.month,
+                        year: data.year,
+                    },
+                },
+                create: {
+                    userId: data.userId,
+                    day: data.day,
+                    month: data.month,
+                    year: data.year,
+                    expense: data.expense,
+                    income: data.income,
+                },
+                update: {
+                    expense: { increment: data.expense },
+                    income: { increment: data.income },
+                },
+            }).catch((error: Error) => {
+                console.error('Failed to update month history:', error);
+                return null; // Continue with other updates
+            })
+        ));
+    }
+
+    // Process year history updates in chunks
+    for (let i = 0; i < yearUpdates.length; i += CHUNK_SIZE) {
+        const chunk = yearUpdates.slice(i, i + CHUNK_SIZE);
+        await Promise.all(chunk.map(data => 
+            tx.yearHistory.upsert({
+                where: {
+                    month_year_userId: {
+                        userId: data.userId,
+                        month: data.month,
+                        year: data.year,
+                    },
+                },
+                create: {
+                    userId: data.userId,
+                    month: data.month,
+                    year: data.year,
+                    expense: data.expense,
+                    income: data.income,
+                },
+                update: {
+                    expense: { increment: data.expense },
+                    income: { increment: data.income },
+                },
+            }).catch((error: Error) => {
+                console.error('Failed to update year history:', error);
+                return null; // Continue with other updates
+            })
+        ));
     }
 }
 

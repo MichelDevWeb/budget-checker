@@ -28,8 +28,6 @@ import { useSwipeable } from "react-swipeable";
 import CreateTransactionDialog from "./CreateTransactionDialog";
 
 const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
-  console.log("MainContainer rendered");
-
   const [dateRange, setDateRange] = React.useState<{
     from: Date;
     to: Date;
@@ -45,8 +43,6 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
   const prefetchAdjacentData = React.useCallback(async () => {
     const nextStep = step + getStepByIndex(selectedDateRangeIndex);
     const prevStep = step - getStepByIndex(selectedDateRangeIndex);
-    console.log(nextStep, prevStep);
-
     // Prefetch next period
     const nextRange = {
       from: getDateRangeItems(nextStep)[selectedDateRangeIndex].from,
@@ -217,7 +213,6 @@ const Overview = React.memo(({
   expense,
   userSettings,
 }: OverviewProps) => {
-  console.log('Overview');
   const [type, setType] = React.useState<"expense" | "income">("expense");
   
   const statsQuery = useQuery<GetCategoriesStatsResponseType>({
@@ -300,5 +295,7 @@ const Overview = React.memo(({
     );
   }
 });
+
+Overview.displayName = "Overview";
 
 export default MainContainer;

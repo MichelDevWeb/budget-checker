@@ -2,6 +2,7 @@ import { GetFormatterForCurrency } from "@/lib/helpers";
 import prisma from "@/lib/prisma";
 import { OverviewQuerySchema } from "@/schema/overview";
 import { currentUser } from "@clerk/nextjs/server";
+import { Transaction } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 export async function GET(request: Request) {
@@ -61,7 +62,7 @@ async function getTransactionsHistory(userId: string, from: Date, to: Date) {
     },
   });
 
-  return transactions.map((transaction: any) => ({
+  return transactions.map((transaction: Transaction) => ({
     ...transaction,
     // lets format the amount to the user's currency
     formattedAmount: formatter.format(transaction.amount),

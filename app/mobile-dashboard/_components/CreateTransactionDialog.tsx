@@ -82,8 +82,6 @@ const CreateTransactionDialog = ({
     },
   ]);
 
-  console.log(transactions);
-
   const queryClient = useQueryClient();
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
