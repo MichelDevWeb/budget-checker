@@ -125,28 +125,18 @@ html body[data-scroll-locked] {
 }
 
 @media (max-width: 768px) {
-  /* Prevent focus on page load */
-  input, textarea, select, button {
-    font-size: 16px; /* Prevents iOS zoom */
-    -webkit-user-select: none; /* Safari */
-    user-select: none;
+  /* Existing rules ... */
+
+  /* Prevent focus ring until actual interaction */
+  *:focus:not(:active) {
+    outline: none !important;
   }
 
-  /* Enable focus only after touch */
-  input:focus, textarea:focus, select:focus, button:focus {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-
-  /* Optional: Disable zoom on focus */
-  input[type="text"],
-  input[type="number"],
-  input[type="email"],
-  input[type="tel"],
-  input[type="password"],
-  textarea,
-  select {
-    max-height: 100%;
-    font-size: 16px !important;
+  /* Prevent auto-focus behavior */
+  input, textarea, select {
+    &:not(:active) {
+      -webkit-tap-highlight-color: transparent;
+      outline: none !important;
+    }
   }
 }
