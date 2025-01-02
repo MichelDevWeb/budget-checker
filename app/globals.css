@@ -123,3 +123,30 @@ html body[data-scroll-locked] {
     @apply bg-background text-foreground;
   }
 }
+
+@media (max-width: 768px) {
+  /* Prevent focus on page load */
+  input, textarea, select, button {
+    font-size: 16px; /* Prevents iOS zoom */
+    -webkit-user-select: none; /* Safari */
+    user-select: none;
+  }
+
+  /* Enable focus only after touch */
+  input:focus, textarea:focus, select:focus, button:focus {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Optional: Disable zoom on focus */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    max-height: 100%;
+    font-size: 16px !important;
+  }
+}
