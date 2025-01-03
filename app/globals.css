@@ -125,18 +125,27 @@ html body[data-scroll-locked] {
 }
 
 @media (max-width: 768px) {
-  /* Existing rules ... */
-
-  /* Prevent focus ring until actual interaction */
-  *:focus:not(:active) {
+  /* Prevent focus on page load */
+  input, textarea, select {
+    font-size: 16px !important; /* Prevents iOS zoom */
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: none; /* Disable interactions by default */
     outline: none !important;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  /* Prevent auto-focus behavior */
-  input, textarea, select {
-    &:not(:active) {
-      -webkit-tap-highlight-color: transparent;
-      outline: none !important;
-    }
+  /* Enable interaction only when container is touched */
+  .input-container.active input,
+  .input-container.active textarea,
+  .input-container.active select {
+    pointer-events: auto;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Remove focus styles until explicitly focused */
+  *:focus:not(:active) {
+    outline: none !important;
   }
 }

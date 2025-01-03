@@ -3,13 +3,18 @@
 import React from "react";
 import { ChevronsLeft, ChevronsRight, Plus } from "lucide-react";
 import { UserSettings } from "@prisma/client";
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GetBalanceStatsResponseType } from "@/app/api/stats/balance/route";
-import { DateToUTCDate, GetFormatterForCurrency, getDateRangeItems, getStepByIndex } from "@/lib/helpers";
 import {
-  endOfToday,
-  startOfToday,
-} from "date-fns";
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { GetBalanceStatsResponseType } from "@/app/api/stats/balance/route";
+import {
+  GetFormatterForCurrency,
+  getDateRangeItems,
+  getStepByIndex,
+} from "@/lib/helpers";
+import { endOfToday, startOfToday } from "date-fns";
 import CountUp from "react-countup";
 import {
   DropdownMenu,
@@ -20,11 +25,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import PieChartOverview from "./PieChartOverview";
-import MobileCategoriesStats from "./MobileCategoriesStats";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
-import { GetCategoriesStatsResponseType } from "@/app/api/stats/categories/route";
 import { useSwipeable } from "react-swipeable";
+import Overview from "./Overview";
+import TransactionOverview from "./TransactionOverview";
 import CreateTransactionDialog from "./CreateTransactionDialog";
 
 const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
@@ -38,6 +41,10 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
   const [selectedDateRangeIndex, setSelectedDateRangeIndex] = React.useState(1);
   const [step, setStep] = React.useState<number>(0);
   const queryClient = useQueryClient();
+  const [activeView, setActiveView] = React.useState<
+    "overview" | "transactions"
+  >("overview");
+  const [type, setType] = React.useState<"expense" | "income">("expense");
 
   // Background prefetching for next/previous periods
   const prefetchAdjacentData = React.useCallback(async () => {
@@ -83,7 +90,7 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     refetchOnWindowFocus: false,
-    placeholderData: keepPreviousData
+    placeholderData: keepPreviousData,
   });
 
   // Prefetch adjacent periods when current data is loaded
@@ -189,113 +196,87 @@ const MainContainer = ({ userSettings }: { userSettings: UserSettings }) => {
           />
         </div>
       </div>
-      {/* OVERVIEW */}
-      <Overview
-        dateRange={dateRange}
-        income={income}
-        expense={expense}
-        userSettings={userSettings}
-      />
+      {/* Views Container */}
+      {activeView === "overview" && (
+        <Overview
+          dateRange={dateRange}
+          income={income}
+          expense={expense}
+          userSettings={userSettings}
+          type={type}
+        />
+      )}
+      {activeView === "transactions" && (
+        <TransactionOverview dateRange={dateRange} formatter={formatter} />
+      )}
+
+      {/* Bottom Action Bar */}
+      <div className="fixed bottom-0 right-0 left-0 z-30 bg-background/80 backdrop-blur-lg border-t border-border">
+        <div className="py-3 flex gap-2 px-2 justify-end">
+          <Button
+            className={`
+              transition-all duration-200
+              ${
+                activeView === "transactions"
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                  : "bg-muted hover:bg-muted/90 text-muted-foreground"
+              }
+              font-medium shadow-sm
+              rounded-lg
+              flex items-center justify-center gap-2
+              hover:scale-[0.98] active:scale-[0.97]
+            `}
+            onClick={() => setActiveView(activeView === "overview" ? "transactions" : "overview")}
+          >
+            <span className="font-medium">
+              {activeView === "transactions" ? "Overview" : "Transactions"}
+            </span>
+          </Button>
+
+          <Button
+            className={`
+              transition-all duration-200
+              ${
+                type === "income"
+                  ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                  : "bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400"
+              }
+              font-medium shadow-sm
+              rounded-lg
+              flex items-center justify-center
+              hover:scale-[0.98] active:scale-[0.97]
+            `}
+            onClick={() => setType(type === "income" ? "expense" : "income")}
+          >
+            {type === "income" ? "Incomes" : "Expenses"}
+          </Button>
+
+          <CreateTransactionDialog
+            type={type}
+            category={null}
+            trigger={
+              <Button
+                className={`
+                  transition-all duration-200
+                  ${
+                    type === "income"
+                      ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                      : "bg-red-500 hover:bg-red-600 text-white"
+                  }
+                  font-medium shadow-sm
+                  rounded-lg w-12
+                  flex items-center justify-center
+                  hover:scale-[0.98] active:scale-[0.97]
+                `}
+              >
+                <Plus className="h-6 w-6" />
+              </Button>
+            }
+          />
+        </div>
+      </div>
     </div>
-  )
+  );
 };
-
-interface OverviewProps {
-  dateRange: { from: Date; to: Date };
-  income: number;
-  expense: number;
-  userSettings: UserSettings;
-}
-
-const Overview = React.memo(({
-  dateRange,
-  income,
-  expense,
-  userSettings,
-}: OverviewProps) => {
-  const [type, setType] = React.useState<"expense" | "income">("expense");
-  
-  const statsQuery = useQuery<GetCategoriesStatsResponseType>({
-    queryKey: ["overview", "stats", "categories", dateRange.from, dateRange.to, type],
-    queryFn: () =>
-      fetch(
-        `/api/stats/categories?type=${type}&from=${DateToUTCDate(
-          dateRange.from
-        )}&to=${DateToUTCDate(dateRange.to)}`
-      ).then((res) => res.json()),
-    staleTime: 30000,
-    gcTime: 5 * 60 * 1000,
-  });
-
-  const formatter = React.useMemo(() => {
-    return GetFormatterForCurrency(userSettings.currency);
-  }, [userSettings.currency]);
-
-  if (dateRange.from && dateRange.to) {
-    return (
-      <>
-        <SkeletonWrapper isLoading={statsQuery.isFetching}>
-          {statsQuery.data && (
-            <PieChartOverview
-              data={statsQuery.data}
-              income={income}
-              expense={expense}
-              type={type}
-            />
-          )}
-          <div className="fixed bottom-2 right-2 flex gap-2 z-50">
-            <Button
-              className={`
-                transition-all duration-200
-                ${
-                  type === "income"
-                    ? "bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-600 dark:hover:bg-emerald-700 active:bg-emerald-700 dark:active:bg-emerald-800"
-                    : "bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 active:bg-red-700 dark:active:bg-red-800"
-                }
-                text-white font-medium shadow-lg
-                rounded-full px-6 h-12
-              `}
-              aria-label={`Switch to ${type === "income" ? "expenses" : "incomes"}`}
-              onClick={() => setType(type === "income" ? "expense" : "income")}
-            >
-              {type === "income" ? "Incomes" : "Expenses"}
-            </Button>
-
-            <CreateTransactionDialog
-              type={type}
-              category={null}
-                trigger={
-                  <Button
-                    className={`
-                      transition-all duration-200
-                      ${
-                        type === "income"
-                          ? "bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-600 dark:hover:bg-emerald-700 active:bg-emerald-700 dark:active:bg-emerald-800"
-                          : "bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 active:bg-red-700 dark:active:bg-red-800"
-                      }
-                      text-white font-medium shadow-lg
-                      rounded-full h-12 w-12
-                    `}
-                  >
-                    <Plus className="h-6 w-6" />
-                  </Button>
-                }
-            />
-          </div>
-          {statsQuery.data && (
-            <MobileCategoriesStats
-              data={statsQuery.data}
-              formatter={formatter}
-              type={type}
-              dateRange={dateRange}
-            />
-          )}
-        </SkeletonWrapper>
-      </>
-    );
-  }
-});
-
-Overview.displayName = "Overview";
 
 export default MainContainer;

@@ -11,8 +11,7 @@ CREATE TABLE "Category" (
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "name" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "icon" TEXT NOT NULL,
-    "type" TEXT NOT NULL DEFAULT 'income'
+    "icon" TEXT NOT NULL
 );
 
 -- CreateTable
@@ -55,4 +54,4 @@ CREATE TABLE "YearHistory" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Category_name_userId_type_key" ON "Category"("name", "userId", "type");
+CREATE UNIQUE INDEX "Category_name_userId_key" ON "Category"("name", "userId");
