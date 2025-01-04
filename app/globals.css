@@ -126,7 +126,9 @@ html body[data-scroll-locked] {
 
 @media (max-width: 768px) {
   /* Prevent focus on page load */
-  input, textarea, select {
+  .input-container input, 
+  .input-container textarea, 
+  .input-container select {
     font-size: 16px !important; /* Prevents iOS zoom */
     -webkit-user-select: none;
     user-select: none;
